@@ -30,11 +30,11 @@ fn team_rucksack_priorities() -> usize {
 
     for (idx, rucksack) in rucksacks.iter().enumerate() {
         // only search on every third rucksack
-        if idx % 3 == 0 {
+        if idx % 3 == 2 {
             for val in rucksack.chars() {
                 // check if the item type is shared amongst all three rucksacks in the set
-                if rucksacks[idx+1].contains(val) &&
-                    rucksacks[idx+2].contains(val)
+                if rucksacks[idx-1].contains(val) &&
+                    rucksacks[idx-2].contains(val)
                 {
                     // convert to priority system and add to keys
                     if val as usize > 96 {

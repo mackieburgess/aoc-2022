@@ -1,8 +1,5 @@
-use anyhow::Result;
-use std::fs;
-
-fn most_plentiful_elves(amount: usize) -> Result<usize> {
-    let mut elves: Vec<usize> = fs::read_to_string("./data/1.input")?
+fn most_plentiful_elves(amount: usize) -> usize {
+    let mut elves: Vec<usize> = include_str!("../data/1.input")
         .split("\n\n")
         .map(|bundle| {
             bundle
@@ -14,17 +11,10 @@ fn most_plentiful_elves(amount: usize) -> Result<usize> {
 
     elves.sort_by(|a,b| b.cmp(a));
 
-    // TODO: doesn't work when there aren't enough elves. I'm lazy.
-    if elves.len() >= amount {
-        Ok(elves[0..amount].iter().sum())
-    } else {
-        Ok(0)
-    }
+    elves.iter().take(amount).sum()
 }
 
-fn main() -> Result<()> {
-    println!("part one: {}", most_plentiful_elves(1)?);
-    println!("part two: {}", most_plentiful_elves(3)?);
-
-    Ok(())
+fn main() {
+    println!("part one: {}", most_plentiful_elves(1));
+    println!("part two: {}", most_plentiful_elves(3));
 }
