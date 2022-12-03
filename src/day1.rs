@@ -1,27 +1,30 @@
 use anyhow::Result;
 use std::fs;
 
-fn most_food() -> Result<usize> {
-    let calories_stashed: Vec<usize> = fs::read_to_string("./data/1.input")?
+fn most_plentiful_elves(amount: usize) -> Result<usize> {
+    let mut elves: Vec<usize> = fs::read_to_string("./data/1.input")?
         .split("\n\n")
         .map(|bundle| {
             bundle
                 .split("\n")
+                // filter by values that can be usize
                 .filter_map(|val| val.parse::<usize>().ok())
                 .sum()
         }).collect();
 
-    let most_calories = calories_stashed.iter().max();
+    elves.sort_by(|a,b| b.cmp(a));
 
-    if let Some(elf) = most_calories {
-        Ok(elf.clone())
+    // TODO: doesn't work when there aren't enough elves. I'm lazy.
+    if elves.len() >= amount {
+        Ok(elves[0..amount].iter().sum())
     } else {
         Ok(0)
     }
 }
 
 fn main() -> Result<()> {
-    println!("part one: {}", most_food()?);
+    println!("part one: {}", most_plentiful_elves(1)?);
+    println!("part two: {}", most_plentiful_elves(3)?);
 
     Ok(())
 }
