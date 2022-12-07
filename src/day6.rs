@@ -28,14 +28,14 @@ fn is_lonely(
     }
 
     if !found {
-        if backwards == 0 {
-            return true;
-        } else {
+        if backwards != 0 {
             return is_lonely(input, backwards-1, forwards+1, idx-1);
         }
-    } else {
-        return false;
+
+        return true;
     }
+
+    return false;
 }
 
 fn first_lonely_key(distance: usize) -> usize {
