@@ -38,11 +38,11 @@ fn is_lonely(
     }
 }
 
-fn first_lonely_key() -> usize {
+fn first_lonely_key(distance: usize) -> usize {
     let input = include_str!("../data/6.input").to_string();
 
     for idx in 0..input.len() {
-        if is_lonely(&input, 3, 0, idx) {
+        if is_lonely(&input, distance-1, 0, idx) {
             return idx+1;
         }
     }
@@ -51,5 +51,6 @@ fn first_lonely_key() -> usize {
 }
 
 fn main() {
-    println!("part one: {}", first_lonely_key());
+    println!("part one: {}", first_lonely_key(4));
+    println!("part two: {}", first_lonely_key(14));
 }
