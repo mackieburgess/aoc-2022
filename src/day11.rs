@@ -1,6 +1,7 @@
 use std::collections::VecDeque;
 
 
+#[derive(Clone)]
 struct Monkey {
     items: VecDeque<usize>,
     operation: Op,
@@ -10,10 +11,17 @@ struct Monkey {
     inspected: usize,
 }
 
+#[derive(Clone, Copy)]
 struct Op {
     lhs: usize,
     op: char,
     rhs: usize,
+}
+
+#[derive(Clone, Copy)]
+enum Mode {
+    Normal,
+    Fancy
 }
 
 impl Monkey {
@@ -94,7 +102,9 @@ impl Monkey {
     // }
 }
 
-fn monkey_round(mut monkeys: Vec<Monkey>) -> Vec<Monkey> {
+fn monkey_round(mut monkeys: Vec<Monkey>, mode: Mode) -> Vec<Monkey> {
+    let common_multiple: usize = monkeys.clone().iter().map(|monkey| monkey.test).product();
+
     for idx in 0..monkeys.len() {
         // perform the worry operation on the monkey
         monkeys[idx].items = monkeys[idx].items.iter().map(|item| {
@@ -113,10 +123,18 @@ fn monkey_round(mut monkeys: Vec<Monkey>) -> Vec<Monkey> {
                 rhs = *item;
             }
 
-            match monkeys[idx].operation.op {
-                '+' => (lhs + rhs).div_euclid(3),
-                '*' => (lhs * rhs).div_euclid(3),
-                _ => *item
+            if let Mode::Normal = mode {
+                match monkeys[idx].operation.op {
+                    '+' => (lhs + rhs).div_euclid(3),
+                    '*' => (lhs * rhs).div_euclid(3),
+                    _ => *item
+                }
+            } else {
+                match monkeys[idx].operation.op {
+                    '+' => (lhs + rhs).rem_euclid(common_multiple),
+                    '*' => (lhs * rhs).rem_euclid(common_multiple),
+                    _ => *item
+                }
             }
         }).collect();
 
@@ -143,14 +161,14 @@ fn monkey_round(mut monkeys: Vec<Monkey>) -> Vec<Monkey> {
     monkeys
 }
 
-fn monkey_business_level() -> usize {
+fn monkey_business_level(rounds: usize, mode: Mode) -> usize {
     let mut monkeys = include_str!("../data/11.input")
         .split("\n\n")
         .map(|monkey| Monkey::build(monkey))
         .collect::<Vec<Monkey>>();
 
-    for _ in 0..20 {
-        monkeys = monkey_round(monkeys);
+    for _ in 0..rounds {
+        monkeys = monkey_round(monkeys, mode);
     }
 
     monkeys
@@ -177,5 +195,6 @@ fn monkey_business_level() -> usize {
 }
 
 fn main() {
-    println!("part one: {}", monkey_business_level());
+    println!("part one: {}", monkey_business_level(20, Mode::Normal));
+    println!("part two: {}", monkey_business_level(10000, Mode::Fancy));
 }
