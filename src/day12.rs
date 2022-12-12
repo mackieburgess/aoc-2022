@@ -7,10 +7,13 @@ fn build_height_map() -> Vec<Vec<usize>> {
             .map(|line| {
             line.chars().map(|char| {
                 match char {
+                    // configure start and end points
                     'S' => 0,
                     'E' => 27,
+                    // cast char to usize
                     char if char.is_ascii() => (char as usize) - 96,
-                    _ => 0
+                    // bad input is insurmountable
+                    _ => usize::MAX
                 }
             }).collect()
         }).collect();
@@ -18,28 +21,15 @@ fn build_height_map() -> Vec<Vec<usize>> {
     return map
 }
 
-fn get_lowest_point(map: &Vec<Vec<usize>>) -> (usize, usize) {
-    for (y, line) in map.iter().enumerate() {
-        for (x, height) in line.iter().enumerate() {
-            if *height == 0 {
-                return (x, y);
-            }
-        }
-    }
-
-    return (0,0);
-}
-
-fn shortest_path() -> usize {
-
+fn process_path(start_x: usize, start_y: usize) -> usize {
     let height_map = build_height_map();
 
-    // keep track of all the 
+    // keep track of all the visited locations
     let mut visited: HashSet<(usize, usize)> = HashSet::new();
 
     // ((x, y), route_length)
     let mut paths: VecDeque<((usize, usize), usize)> = VecDeque::from([
-        (get_lowest_point(&height_map), 0)
+        ((start_x, start_y), 0)
     ]);
 
     // I'm sure people will spin up A* to solve this really neatly
@@ -119,10 +109,36 @@ fn shortest_path() -> usize {
                     visited.insert(new_path);
                 }
             }
+        } else {
+            // probably one of the slowest ways to avoid getting stuck in holes
+            // there are nicer ways, but again: exam day ._.
+            return usize::MAX;
         }
     }
 }
 
+fn shortest_path_from_height(height: usize) -> usize {
+    // run through all possible starting points, check lengths, return the minimum
+    let map = build_height_map();
+
+    let mut shortest_path = usize::MAX;
+
+    for (y, line) in map.iter().enumerate() {
+        for (x, location) in line.iter().enumerate() {
+            if *location == height {
+                let path_length = process_path(x, y);
+
+                if path_length < shortest_path {
+                    shortest_path = path_length;
+                }
+            }
+        }
+    }
+
+    shortest_path
+}
+
 fn main() {
-    println!("part one: {}", shortest_path());
+    println!("part one: {}", shortest_path_from_height(0));
+    println!("part two: {}", shortest_path_from_height(1));
 }
