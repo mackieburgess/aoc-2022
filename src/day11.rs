@@ -45,8 +45,6 @@ impl Monkey {
             op: match operation[4] {
                 "+" => '+',
                 "*" => '*',
-                "-" => '-',
-                "/" => '/',
                 _ => '?'
             },
             rhs: match operation[5].parse::<usize>().ok() {
@@ -91,22 +89,16 @@ impl Monkey {
             inspected: 0
         }
     }
-
-    // fn print(&self) {
-    //     println!("items: {:?}", self.items);
-    //     println!("operation: {} {} {}", self.operation.lhs, self.operation.op, self.operation.rhs);
-    //     println!("test: {}", self.test);
-    //     println!("if true, pass to monkey {}", self.true_result);
-    //     println!("if false, pass to monkey {}", self.false_result);
-    //     println!();
-    // }
 }
 
 fn monkey_round(mut monkeys: Vec<Monkey>, mode: Mode) -> Vec<Monkey> {
+    // common multiple is used in fancy mode to correctly calculate worry levels without dealing
+    // with huge numbers
     let common_multiple: usize = monkeys.clone().iter().map(|monkey| monkey.test).product();
 
     for idx in 0..monkeys.len() {
         // perform the worry operation on the monkey
+        // has to access monkeys[idx] because monkeys needs to be accessed/modified
         monkeys[idx].items = monkeys[idx].items.iter().map(|item| {
             let lhs: usize;
             let rhs: usize;
@@ -151,7 +143,6 @@ fn monkey_round(mut monkeys: Vec<Monkey>, mode: Mode) -> Vec<Monkey> {
             }
 
             if let Some(moving_item) = monkeys[idx].items.pop_front() {
-                // have to assign to avoid immutable + mutable borrow
                 monkeys[move_location].items.push_back(moving_item);
             }
         }
