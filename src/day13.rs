@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 
 // either a list of signals, or a usize, or nothing
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 enum Signal {
     List(Vec<Signal>),
     Item(usize),
@@ -94,6 +94,16 @@ impl PartialOrd for Signal {
     }
 }
 
+impl Ord for Signal {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if let Some(ordering) = self.partial_cmp(other) {
+            ordering
+        } else {
+            Ordering::Equal
+        }
+    }
+}
+
 fn process_input(input: &str) -> Vec<String> {
     // lots of replacing and flattening to separate out all the `[` and `]`
     let mut input = input
@@ -111,6 +121,26 @@ fn process_input(input: &str) -> Vec<String> {
     input.remove(0);
 
     return input;
+}
+
+fn get_ordered_signals() -> Vec<Signal> {
+    let mut signals = include_str!("../data/13.input")
+        .split("\n\n")
+        .flat_map(|pair| {
+            if let Some((lhs, rhs)) = pair.split_once('\n') {
+                // build vecs
+                let lhs = Signal::from(process_input(lhs));
+                let rhs = Signal::from(process_input(rhs));
+
+                return vec![lhs, rhs];
+            }
+
+            vec![]
+        }).collect::<Vec<Signal>>();
+
+    signals.sort();
+
+    return signals;
 }
 
 fn ordered_pair_indices() -> usize {
@@ -139,6 +169,35 @@ fn ordered_pair_indices() -> usize {
         }).sum();
 }
 
+fn packet_locations() -> usize {
+    // this one is a little brute-force, and not elegant at all
+    // it has been a long week, ok
+
+    let signals = get_ordered_signals();
+    let packet_one = Signal::from(process_input("[[2]]"));
+    let packet_two = Signal::from(process_input("[[6]]"));
+
+    let mut packet_locations = [0, 0];
+
+    for (idx, signal) in signals.iter().enumerate() {
+        if packet_one < *signal {
+            packet_locations[0] = idx + 1;
+            break
+        }
+    }
+
+    for (idx, signal) in signals.iter().enumerate() {
+        if packet_two < *signal {
+            packet_locations[1] = idx + 2;
+            break
+        }
+    }
+
+    // a bit dramatic, I know
+    return packet_locations.iter().product();
+}
+
 fn main() {
     println!("part one: {}", ordered_pair_indices());
+    println!("part two: {}", packet_locations());
 }
