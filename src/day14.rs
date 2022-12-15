@@ -4,6 +4,9 @@ use std::cmp::{min, max};
 // extravagant type definition, bool denotes whether something is on that point
 type Board = VecDeque<VecDeque<bool>>;
 
+#[derive(PartialEq)]
+enum Mode { Abyss, Floor }
+
 fn fill_board(mut board: Board, x: usize, y: usize) -> Board {
     // fill required grid space with falses
     while board.len() <= y {
@@ -73,6 +76,10 @@ fn draw_board() -> Board {
         }
     }
 
+    // make the board... really really big
+    board = fill_board(board, 1000, 0);
+
+    // add empty row
     board.push_back(VecDeque::new());
 
     for _ in 0..board[0].len() {
@@ -81,10 +88,19 @@ fn draw_board() -> Board {
         }
     }
 
+    // add true row
+    board.push_back(VecDeque::new());
+
+    for _ in 0..board[0].len() {
+        if let Some(back) = board.back_mut() {
+            back.push_back(true);
+        }
+    }
+
     return board;
 }
 
-fn first_abyss_unit() -> usize {
+fn end_of_sand(mode: Mode) -> usize {
     let mut cave_scan = draw_board();
     let (mut cur_x, mut cur_y) = (500,0);
     let mut sand_rested = 0;
@@ -93,7 +109,16 @@ fn first_abyss_unit() -> usize {
     cave_scan[cur_y][cur_x] = true;
 
     loop {
-        if cur_y == cave_scan.len() - 1 {
+        if mode == Mode::Abyss
+            && cur_y == cave_scan.len() - 2
+        {
+            break
+        } else if !cave_scan[cur_y][cur_x] {
+            // I know you can do this really fast
+            // you just get the unit area of a full-height triangle,
+            // minus cave sections that intersect
+            //
+            // but I'm being lazy
             break
         }
 
@@ -125,7 +150,7 @@ fn first_abyss_unit() -> usize {
             cur_x = 500;
             cur_y = 0;
 
-            cave_scan[cur_y][cur_x] = true;
+            cave_scan[cur_y][cur_x] ^= true;
             sand_rested += 1;
         }
     }
@@ -134,5 +159,6 @@ fn first_abyss_unit() -> usize {
 }
 
 fn main() {
-    println!("part one: {}", first_abyss_unit());
+    println!("part one: {}", end_of_sand(Mode::Abyss));
+    println!("part two: {}", end_of_sand(Mode::Floor));
 }
