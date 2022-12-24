@@ -37,7 +37,7 @@ fn pass_time(map: &Vec<Vec<bool>>, old_hurricanes: Vec<((usize, usize), Directio
 }
 
 fn manhattan(cur: (usize, usize), dest: (usize, usize)) -> usize {
-    // compares the second last element location to the last element location
+    // compares the fastest way from the current element to the destination
     return cur.0.abs_diff(dest.0) + cur.1.abs_diff(dest.1);
 }
 
@@ -93,7 +93,6 @@ fn fewest_steps_required(start_time: usize, forwards: bool) -> usize {
     let mut agenda: Vec<((usize, usize), (usize, usize))> = Vec::from([(start_point, (start_time, manhattan((1, 0), destination)))]);
     let mut visited: HashSet<((usize, usize), (usize, usize))> = HashSet::new();
 
-
     while agenda.len() != 0 {
         // sort by distance + heuristic, descending
         agenda.sort_by(|a, b| (b.1.0 + b.1.1).cmp(&(&a.1.0 + &a.1.1)));
@@ -105,17 +104,17 @@ fn fewest_steps_required(start_time: usize, forwards: bool) -> usize {
                 return time;
             }
 
+            // ensure there are no duplicates checked
             visited.insert(((x, y), (time, h)));
 
-            let mut round_hurricanes = hurricanes.clone();
-
             // hurricane simulation
-            round_hurricanes = pass_time(&map, round_hurricanes, time+1);
+            let round_hurricanes = pass_time(&map, hurricanes.clone(), time+1);
 
             // up
             if y != 0 && map[y-1][x] && !h_contains(&round_hurricanes, (x, y-1)) {
                 let to_add = ((x, y-1), (time+1, manhattan((x, y-1), destination)));
 
+                // checks whether the value will be or has been checked
                 if !visited.contains(&to_add) && !agenda.contains(&to_add) {
                     agenda.push(to_add);
                 }
@@ -159,6 +158,7 @@ fn fewest_steps_required(start_time: usize, forwards: bool) -> usize {
         }
     }
 
+    // bad input, exit point cannot be found
     panic!("valley is unsurpassable");
 }
 
@@ -167,6 +167,7 @@ fn one_way_trip() -> usize {
 }
 
 fn round_trip() -> usize {
+    // go there and back and there again
     return fewest_steps_required(
         fewest_steps_required(
             fewest_steps_required(
@@ -178,8 +179,6 @@ fn round_trip() -> usize {
 }
 
 fn main() {
-    // today's solution takes absolutely _forever_ :/
-    // A* on a big graph with a questionable heuristic is just really slow
     println!("part one: {}", one_way_trip());
     println!("part two: {}", round_trip())
 }
