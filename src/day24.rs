@@ -3,35 +3,32 @@ use std::collections::HashSet;
 #[derive(Debug, Clone, Copy)]
 enum Direction { North, East, South, West }
 
-fn pass_time(map: &Vec<Vec<bool>>, old_hurricanes: Vec<((usize, usize), Direction)>) -> Vec<((usize, usize), Direction)> {
+fn pass_time(map: &Vec<Vec<bool>>, old_hurricanes: Vec<((usize, usize), Direction)>, time: usize) -> Vec<((usize, usize), Direction)> {
     let mut hurricanes: Vec<((usize, usize), Direction)> = vec![];
 
     // move hurricanes, wrapping on the map edge
+    // now with new and improved maths™
     for ((x, y), direction) in old_hurricanes.iter() {
         match direction {
             Direction::North => {
-                match y {
-                    1 => hurricanes.push(((*x, map.len() - 2), *direction)),
-                    _ => hurricanes.push(((*x, y - 1), *direction))
-                }
+                let new_y = (y + (map.len()-2) - (time % (map.len()-2))) % (map.len()-2);
+
+                hurricanes.push(((*x, new_y), *direction));
             },
             Direction::East => {
-                match x {
-                    v if *v == map[*y].len() - 2 => hurricanes.push(((1, *y), *direction)),
-                    _ => hurricanes.push(((x + 1, *y), *direction))
-                }
+                let new_x = ((x + ((time-1) % (map[*y].len()-2))) % (map[*y].len()-2)) + 1;
+
+                hurricanes.push(((new_x, *y), *direction));
             },
             Direction::South => {
-                match y {
-                    v if *v == map.len() - 2 => hurricanes.push(((*x, 1), *direction)),
-                    _ => hurricanes.push(((*x, y + 1), *direction))
-                }
+                let new_y = ((y + ((time-1) % (map.len()-2))) % (map.len()-2)) + 1;
+
+                hurricanes.push(((*x, new_y), *direction));
             },
             Direction::West => {
-                match x {
-                    1 => hurricanes.push(((map[*y].len() - 2, *y), *direction)),
-                    _ => hurricanes.push(((x - 1, *y), *direction))
-                }
+                let new_x = (x + (map[*y].len()-2) - (time % (map[*y].len()-2))) % (map[*y].len()-2);
+
+                hurricanes.push(((new_x, *y), *direction));
             }
         }
     }
@@ -39,9 +36,9 @@ fn pass_time(map: &Vec<Vec<bool>>, old_hurricanes: Vec<((usize, usize), Directio
     return hurricanes;
 }
 
-fn manhattan(map: &Vec<Vec<bool>>, cur: (usize, usize)) -> usize {
+fn manhattan(cur: (usize, usize), dest: (usize, usize)) -> usize {
     // compares the second last element location to the last element location
-    return cur.0.abs_diff(map.len() - 1) + cur.1.abs_diff(map[map.len()-1].len() - 2)
+    return cur.0.abs_diff(dest.0) + cur.1.abs_diff(dest.1);
 }
 
 fn h_contains(hurricanes: &Vec<((usize, usize), Direction)>, cur: (usize, usize)) -> bool {
@@ -53,7 +50,7 @@ fn h_contains(hurricanes: &Vec<((usize, usize), Direction)>, cur: (usize, usize)
     return false;
 }
 
-fn fewest_steps_required() -> usize {
+fn fewest_steps_required(start_time: usize, forwards: bool) -> usize {
     let map_data = include_str!("../data/24.input");
 
     // false is wall, true is floor
@@ -83,23 +80,28 @@ fn fewest_steps_required() -> usize {
         }
     }
 
-    let mut agenda: Vec<((usize, usize), (usize, usize))> = Vec::from([((1, 0), (0, manhattan(&map, (1, 0))))]);
+    let start_point = match forwards {
+        true => (1, 0),
+        false => (map[map.len()-1].len()-2, map.len()-1)
+    };
+
+    let destination = match forwards {
+        true => (map[map.len()-1].len() - 2, map.len() - 1),
+        false => (1, 0)
+    };
+
+    let mut agenda: Vec<((usize, usize), (usize, usize))> = Vec::from([(start_point, (start_time, manhattan((1, 0), destination)))]);
     let mut visited: HashSet<((usize, usize), (usize, usize))> = HashSet::new();
-    let mut counter = 0;
+
 
     while agenda.len() != 0 {
-        counter += 1;
-        if counter % 10_000 == 0 { println!("{counter}") }
-        if counter % 100_000 == 0 { println!("so far: {} {}", agenda.len(), visited.len()) }
-
         // sort by distance + heuristic, descending
         agenda.sort_by(|a, b| (b.1.0 + b.1.1).cmp(&(&a.1.0 + &a.1.1)));
 
         // take the item with the lowest distance
         if let Some(((x, y), (time, h))) = agenda.pop() {
             // if the end is found
-            if y == map.len()-1 {
-                println!("after {counter} rounds");
+            if y == destination.1 {
                 return time;
             }
 
@@ -107,14 +109,12 @@ fn fewest_steps_required() -> usize {
 
             let mut round_hurricanes = hurricanes.clone();
 
-            // churn through the hurricane simulation
-            for _ in 0..time+1 {
-                round_hurricanes = pass_time(&map, round_hurricanes);
-            }
+            // hurricane simulation
+            round_hurricanes = pass_time(&map, round_hurricanes, time+1);
 
             // up
             if y != 0 && map[y-1][x] && !h_contains(&round_hurricanes, (x, y-1)) {
-                let to_add = ((x, y-1), (time+1, manhattan(&map, (x, y-1))));
+                let to_add = ((x, y-1), (time+1, manhattan((x, y-1), destination)));
 
                 if !visited.contains(&to_add) && !agenda.contains(&to_add) {
                     agenda.push(to_add);
@@ -123,7 +123,7 @@ fn fewest_steps_required() -> usize {
 
             // right
             if map[y][x+1] && !h_contains(&round_hurricanes, (x+1, y)) {
-                let to_add = ((x+1, y), (time+1, manhattan(&map, (x+1, y))));
+                let to_add = ((x+1, y), (time+1, manhattan((x+1, y), destination)));
 
                 if !visited.contains(&to_add) && !agenda.contains(&to_add) {
                     agenda.push(to_add);
@@ -131,8 +131,8 @@ fn fewest_steps_required() -> usize {
             }
 
             // down
-            if map[y+1][x] && !h_contains(&round_hurricanes, (x, y+1)) {
-                let to_add = ((x, y+1), (time+1, manhattan(&map, (x, y+1))));
+            if y != map.len()-1 && map[y+1][x] && !h_contains(&round_hurricanes, (x, y+1)) {
+                let to_add = ((x, y+1), (time+1, manhattan((x, y+1), destination)));
 
                 if !visited.contains(&to_add) && !agenda.contains(&to_add) {
                     agenda.push(to_add);
@@ -141,7 +141,7 @@ fn fewest_steps_required() -> usize {
 
             // left
             if map[y][x-1] && !h_contains(&round_hurricanes, (x-1, y)) {
-                let to_add = ((x-1, y), (time+1, manhattan(&map, (x-1, y))));
+                let to_add = ((x-1, y), (time+1, manhattan((x-1, y), destination)));
 
                 if !visited.contains(&to_add) && !agenda.contains(&to_add) {
                     agenda.push(to_add);
@@ -162,6 +162,24 @@ fn fewest_steps_required() -> usize {
     panic!("valley is unsurpassable");
 }
 
+fn one_way_trip() -> usize {
+    return fewest_steps_required(0, true);
+}
+
+fn round_trip() -> usize {
+    return fewest_steps_required(
+        fewest_steps_required(
+            fewest_steps_required(
+                0,
+                true
+            ), false
+        ), true
+    );
+}
+
 fn main() {
-    println!("part one: {}", fewest_steps_required());
+    // today's solution takes absolutely _forever_ :/
+    // A* on a big graph with a questionable heuristic is just really slow
+    println!("part one: {}", one_way_trip());
+    println!("part two: {}", round_trip())
 }
