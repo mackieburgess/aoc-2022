@@ -18,7 +18,7 @@ fn beset_sections() -> usize {
             }).collect();
 
             if routines.len() == 2 {
-                // ensure that one routine completely enthralls the other
+                // ensure that one routine completely contains the other
                 if routines[0].0 <= routines[1].0 && routines[0].1 >= routines[1].1
                     || routines[0].0 >= routines[1].0 && routines[0].1 <= routines[1].1
                 {
